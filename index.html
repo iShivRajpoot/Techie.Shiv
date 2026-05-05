@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>iShiv</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg-1:#060810;
+  --bg-2:#0a0d1a;
+  --card:rgba(255,255,255,0.035);
+  --card-hover:rgba(255,255,255,0.07);
+  --border:rgba(255,255,255,0.07);
+  --border-hover:rgba(255,255,255,0.18);
+  --muted:#7a8599;
+  --white:#f0f4ff;
+  --red:#ff4d6d;
+  --red-soft:rgba(255,77,109,0.15);
+  --blue:#38bdf8;
+  --blue-soft:rgba(56,189,248,0.12);
+  --purple:#a78bfa;
+  --purple-soft:rgba(167,139,250,0.12);
+  --green:#34d399;
+  --yellow:#fbbf24;
+  --grad-a:#ff4d6d;
+  --grad-b:#f97316;
+  --grad-c:#a78bfa;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+
+body{
+  font-family:'DM Sans',system-ui,sans-serif;
+  color:var(--white);
+  background:var(--bg-1);
+  overflow-x:hidden;
+  cursor:none;
+}
+
+/* ====== CUSTOM CURSOR ====== */
+#cursor-dot{
+  position:fixed;
+  width:8px; height:8px; border-radius:50%;
+  background:var(--white);
+  pointer-events:none; z-index:9999;
+  transform:translate(-50%,-50%);
+  transition:transform .1s ease, background .2s ease, width .2s ease, height .2s ease;
+  mix-blend-mode:difference;
+}
+#cursor-ring{
+  position:fixed;
+  width:36px; height:36px; border-radius:50%;
+  border:1.5px solid rgba(255,255,255,0.5);
+  pointer-events:none; z-index:9998;
+  transform:translate(-50%,-50%);
+  transition:width .3s ease, height .3s ease, border-color .3s ease, background .3s ease, transform .08s linear;
+}
+#cursor-ring.hover{
+  width:56px; height:56px;
+  border-color:var(--red);
+  background:rgba(255,77,109,0.08);
+}
+#cursor-ring.click{
+  width:28px; height:28px;
+  background:rgba(255,77,109,0.2);
+  border-color:var(--red);
+}
+#cursor-trail-canvas{
+  position:fixed; inset:0;
+  pointer-events:none; z-index:9997;
+}
+a, button, .btn, .nav-btn, .work-item, .card, .chip, .brand-chip, .footer-icon, .modal-close{
+  cursor:none;
+}
+
+/* NOISE TEXTURE OVERLAY */
+body::before{
+  content:'';
+  position:fixed; inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity:0.025;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* AMBIENT BLOBS */
+.blob{
+  position:fixed; border-radius:50%;
+  filter:blur(120px); pointer-events:none; z-index:0;
+}
+.blob-1{
+  width:700px; height:700px;
+  background:radial-gradient(circle, rgba(167,139,250,0.18), transparent 70%);
+  top:-200px; right:-200px;
+}
+.blob-2{
+  width:600px; height:600px;
+  background:radial-gradient(circle, rgba(255,77,109,0.12), transparent 70%);
+  bottom:-150px; left:-150px;
+}
+.blob-3{
+  width:400px; height:400px;
+  background:radial-gradient(circle, rgba(56,189,248,0.1), transparent 70%);
+  top:50%; left:50%; transform:translate(-50%,-50%);
+}
+
+/* ====== NAV ====== */
+nav{
+  position:fixed; top:0; left:0; right:0;
+  height:68px;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 56px;
+  background:rgba(6,8,16,0.75);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  z-index:1000;
+  transition:background .3s;
+}
+.logo{
+  font-family:'Syne',sans-serif;
+  font-weight:800; font-size:20px; letter-spacing:-0.5px;
+}
+.logo .dot{
+  display:inline-block;
+  width:8px; height:8px; border-radius:50%;
+  background:var(--red); margin-right:2px;
+  box-shadow:0 0 10px var(--red);
+  vertical-align:middle; margin-bottom:2px;
+}
+.nav-links{display:flex; gap:32px; list-style:none}
+.nav-links a{
+  color:var(--muted); text-decoration:none;
+  font-size:14px; font-weight:500;
+  transition:color .2s;
+  position:relative;
+}
+.nav-links a::after{
+  content:''; position:absolute; bottom:-4px; left:0; right:0;
+  height:1px; background:var(--red);
+  transform:scaleX(0); transform-origin:left;
+  transition:transform .25s ease;
+}
+.nav-links a:hover{color:var(--white)}
+.nav-links a:hover::after{transform:scaleX(1)}
+.nav-btn{
+  background:var(--white); color:#060810;
+  padding:9px 20px; border-radius:999px; cursor:pointer;
+  font-weight:600; font-size:14px;
+  font-family:'Syne',sans-serif;
+  transition:transform .2s, box-shadow .2s;
+  border:none;
+}
+.nav-btn:hover{transform:scale(1.04); box-shadow:0 0 20px rgba(240,244,255,0.2)}
+
+/* ====== HERO ====== */
+.hero{
+  min-height:100vh;
+  display:flex; align-items:center;
+  padding:120px 56px 80px;
+  position:relative; z-index:1;
+}
+.hero-wrap{
+  max-width:1200px; margin:0 auto;
+  display:grid; gap:48px;
+  grid-template-columns:1.3fr 0.7fr;
+  align-items:center; width:100%;
+}
+.hero-eyebrow{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 14px; border-radius:999px;
+  background:var(--red-soft);
+  border:1px solid rgba(255,77,109,0.2);
+  font-size:12px; font-weight:600; letter-spacing:1.5px;
+  color:var(--red); margin-bottom:20px;
+  text-transform:uppercase;
+}
+.hero-eyebrow span{
+  width:6px; height:6px; border-radius:50%;
+  background:var(--red); animation:pulse 2s infinite;
+}
+@keyframes pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,77,109,0.5)}
+  50%{box-shadow:0 0 0 6px rgba(255,77,109,0)}
+}
+.hero h1{
+  font-family:'Syne',sans-serif;
+  font-size:62px; line-height:1.08;
+  font-weight:800; letter-spacing:-2px;
+  margin-bottom:20px;
+}
+.gradient{
+  background:linear-gradient(100deg,var(--grad-a) 0%,var(--grad-b) 45%,var(--grad-c) 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.hero-sub{
+  max-width:500px; color:var(--muted);
+  font-size:16px; line-height:1.7;
+  margin-bottom:32px;
+}
+.hero-actions{display:flex; gap:12px; flex-wrap:wrap}
+.btn{
+  padding:13px 24px; border-radius:999px; cursor:pointer;
+  font-family:'Syne',sans-serif; font-weight:600; font-size:14px;
+  text-decoration:none; display:inline-flex; align-items:center; gap:8px;
+  transition:all .25s ease;
+}
+.btn.primary{
+  background:var(--white); color:#060810; border:none;
+}
+.btn.primary:hover{transform:translateY(-2px); box-shadow:0 12px 30px rgba(240,244,255,0.15)}
+.btn.ghost{
+  background:transparent; color:var(--white);
+  border:1px solid var(--border);
+}
+.btn.ghost:hover{border-color:var(--border-hover); background:var(--card-hover); transform:translateY(-2px)}
+
+/* PROFILE */
+.profile{
+  position:relative; width:260px; margin-left:auto;
+}
+.profile-ring{
+  width:260px; height:260px; border-radius:50%;
+  background:conic-gradient(var(--red), var(--purple), var(--blue), var(--red));
+  padding:3px;
+  animation:spin 8s linear infinite;
+}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.profile-inner{
+  width:100%; height:100%; border-radius:50%;
+  overflow:hidden;
+  background:var(--bg-1);
+}
+.profile img{
+  width:100%; height:100%; object-fit:cover; border-radius:50%;
+}
+.profile-img-placeholder{
+  width:100%; height:100%; border-radius:50%;
+  background:linear-gradient(135deg, #1a1f3a, #2d1f4a);
+  display:flex; align-items:center; justify-content:center;
+  font-size:64px;
+}
+.badge{
+  position:absolute;
+  padding:10px 16px;
+  border-radius:16px;
+  background:rgba(10,13,26,0.9);
+  border:1px solid var(--border-hover);
+  backdrop-filter:blur(20px);
+  font-size:13px; font-weight:600;
+  white-space:nowrap;
+  animation:float 4s ease-in-out infinite;
+  z-index:2;
+}
+.badge.top{top:-20px; right:-32px}
+.badge.bottom{bottom:-20px; left:-32px; animation-delay:2s}
+@keyframes float{
+  0%,100%{transform:translateY(0) rotate(-1deg)}
+  50%{transform:translateY(-12px) rotate(1deg)}
+}
+
+/* ====== SECTION BASE ====== */
+section{
+  padding:100px 56px;
+  position:relative; z-index:1;
+}
+.container{max-width:1200px; margin:0 auto}
+.section-tag{
+  display:inline-block;
+  letter-spacing:2px; font-size:11px; font-weight:700;
+  opacity:.7; margin-bottom:12px; text-transform:uppercase;
+}
+.section-tag.red{color:var(--red)}
+.section-tag.blue{color:var(--blue)}
+.section-tag.purple{color:var(--purple)}
+h1{
+  font-family:'Syne',sans-serif;
+  font-size:42px; line-height:1.1;
+  font-weight:800; letter-spacing:-1.5px;
+  margin-bottom:16px;
+}
+h2{
+  font-family:'Syne',sans-serif;
+  font-size:22px; font-weight:700; margin-bottom:12px;
+}
+h3{
+  font-family:'Syne',sans-serif;
+  font-size:18px; font-weight:700;
+}
+p.muted{color:var(--muted); line-height:1.65}
+
+/* DIVIDER */
+.divider{
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--border),transparent);
+  margin:0 56px;
+}
+
+/* ====== CARDS ====== */
+.grid{
+  display:grid; gap:20px;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+}
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:20px; padding:28px;
+  backdrop-filter:blur(8px);
+  transition:all .3s ease;
+  position:relative; overflow:hidden;
+}
+.card::before{
+  content:''; position:absolute;
+  inset:0; border-radius:20px;
+  background:linear-gradient(135deg, rgba(255,255,255,0.04), transparent);
+  pointer-events:none;
+}
+.card:hover{
+  border-color:var(--border-hover);
+  transform:translateY(-6px);
+  box-shadow:0 24px 60px rgba(0,0,0,0.4);
+  background:var(--card-hover);
+}
+
+/* ====== BRANDS STRIP ====== */
+.brands-section{padding:40px 56px}
+.brands-inner{
+  max-width:1200px; margin:0 auto;
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+}
+.brands-label{
+  font-size:11px; letter-spacing:2px; font-weight:600;
+  color:var(--muted); text-transform:uppercase;
+}
+.brands{
+  display:flex; gap:12px; flex-wrap:wrap; justify-content:center;
+}
+.brand-chip{
+  padding:10px 20px; border-radius:999px;
+  background:var(--card);
+  border:1px solid var(--border);
+  font-size:14px; font-weight:500;
+  transition:all .25s;
+}
+.brand-chip:hover{border-color:var(--border-hover); background:var(--card-hover)}
+
+/* ====== STATS ====== */
+.stat-card{
+  display:flex; flex-direction:column; gap:6px;
+}
+.stat-icon{
+  font-size:24px; margin-bottom:8px;
+  display:inline-flex; padding:10px;
+  border-radius:12px; width:fit-content;
+}
+.stat-icon.blue-bg{background:var(--blue-soft)}
+.stat-icon.red-bg{background:var(--red-soft)}
+.stat-icon.purple-bg{background:var(--purple-soft)}
+.stat-icon.green-bg{background:rgba(52,211,153,0.12)}
+.stat-num{
+  font-family:'Syne',sans-serif;
+  font-size:32px; font-weight:800; letter-spacing:-1px;
+}
+.stat-num.blue{color:var(--blue)}
+.stat-num.red{color:var(--red)}
+.stat-num.purple{color:var(--purple)}
+.stat-num.green{color:var(--green)}
+
+/* ====== AUDIENCE ====== */
+.two-col{
+  display:grid; gap:20px;
+  grid-template-columns:1fr 1fr;
+}
+.bar-group{margin-bottom:20px}
+.bar-label{
+  display:flex; justify-content:space-between;
+  font-size:13px; margin-bottom:8px; font-weight:500;
+}
+.bar-track{
+  height:6px; border-radius:999px;
+  background:rgba(255,255,255,0.06);
+  overflow:hidden;
+}
+.bar-fill{
+  height:100%; border-radius:999px;
+  transition:width 1.5s cubic-bezier(0.4,0,0.2,1);
+}
+.bar-fill.blue{background:linear-gradient(90deg,var(--blue),#0ea5e9)}
+.bar-fill.purple{background:linear-gradient(90deg,var(--purple),#8b5cf6)}
+.bar-fill.red{background:linear-gradient(90deg,var(--red),#f43f5e)}
+.bar-fill.pink{background:linear-gradient(90deg,#f472b6,#ec4899)}
+.cities{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
+.chip{
+  padding:8px 14px; border-radius:10px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid var(--border);
+  font-size:13px; font-weight:500;
+  transition:all .2s;
+}
+.chip:hover{border-color:var(--border-hover); background:rgba(255,255,255,0.08)}
+
+/* ====== COMMUNITY ====== */
+.center{text-align:center}
+.sub{max-width:620px; margin:0 auto 40px; color:var(--muted); line-height:1.7}
+
+/* ====== CASE STUDIES ====== */
+.case-badge{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 12px; border-radius:8px;
+  font-size:12px; font-weight:600; margin-bottom:14px;
+}
+.case-badge.purple{background:var(--purple-soft); color:var(--purple)}
+.case-badge.blue{background:var(--blue-soft); color:var(--blue)}
+.quote-block{
+  border-radius:12px; padding:16px 18px;
+  margin:16px 0; font-style:italic;
+  font-size:14px; line-height:1.6; color:#c4cdd9;
+}
+.quote-block.purple{
+  background:rgba(167,139,250,0.06);
+  border-left:3px solid var(--purple);
+}
+.quote-block.blue{
+  background:rgba(56,189,248,0.06);
+  border-left:3px solid var(--blue);
+}
+.case-footer{
+  display:flex; justify-content:space-between; align-items:center;
+  border-top:1px solid var(--border); padding-top:16px; margin-top:8px;
+}
+.case-metric p{font-size:11px; letter-spacing:1px; color:var(--muted); margin-bottom:4px}
+.case-metric h3{font-size:22px}
+.arrow-link{font-size:13px; font-weight:600}
+.arrow-link.purple{color:var(--purple)}
+.arrow-link.blue{color:var(--blue)}
+
+/* ====== WORK ====== */
+.work-grid{
+  display:grid; gap:24px;
+  grid-template-columns:1.1fr 0.9fr;
+}
+.work-list{display:flex; flex-direction:column; gap:10px; margin-top:24px}
+.work-item{
+  display:flex; align-items:center; gap:14px;
+  padding:16px 20px; border-radius:14px;
+  background:rgba(255,255,255,0.025);
+  border:1px solid var(--border);
+  font-size:14px; font-weight:500;
+  transition:all .25s;
+  cursor:default;
+}
+.work-item:hover{
+  transform:translateX(6px);
+  border-color:var(--border-hover);
+  background:var(--card-hover);
+}
+.work-item-icon{
+  width:36px; height:36px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; flex-shrink:0;
+}
+.point{display:flex; gap:14px; margin-bottom:20px; align-items:flex-start}
+.dot-mark{
+  width:8px; height:8px; border-radius:50%;
+  margin-top:7px; flex-shrink:0;
+}
+.dot-mark.red{background:var(--red); box-shadow:0 0 8px var(--red)}
+.dot-mark.purple{background:var(--purple); box-shadow:0 0 8px var(--purple)}
+.dot-mark.blue{background:var(--blue); box-shadow:0 0 8px var(--blue)}
+.point h4{margin-bottom:4px; font-size:14px; font-weight:600}
+.point h4.red{color:var(--red)}
+.point h4.purple{color:var(--purple)}
+.point h4.blue{color:var(--blue)}
+
+/* ====== TESTIMONIALS ====== */
+.stars{color:var(--yellow); margin-bottom:10px; font-size:14px; letter-spacing:2px}
+.testimonial p{
+  font-size:15px; line-height:1.6;
+  margin-bottom:14px; color:#cdd5e0;
+  font-style:italic;
+}
+.testimonial .handle{color:var(--muted); font-size:13px}
+
+/* ====== CTA ====== */
+.cta-wrap{display:flex; justify-content:center}
+.cta{
+  max-width:780px; width:100%;
+  padding:60px 40px; border-radius:28px;
+  background:linear-gradient(135deg,rgba(26,31,58,0.8),rgba(43,31,58,0.8));
+  border:1px solid var(--border);
+  backdrop-filter:blur(20px);
+  text-align:center;
+  position:relative; overflow:hidden;
+}
+.cta::before{
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(ellipse at 50% 0%, rgba(167,139,250,0.12), transparent 70%);
+  pointer-events:none;
+}
+.cta h1{margin-bottom:12px}
+.cta-email-btn{
+  display:inline-flex; align-items:center; gap:10px;
+  margin-top:28px; padding:14px 28px;
+  border-radius:999px;
+  background:var(--white); color:#060810;
+  font-family:'Syne',sans-serif; font-weight:700; font-size:15px;
+  text-decoration:none;
+  transition:all .25s;
+  border:none; cursor:pointer;
+}
+.cta-email-btn:hover{
+  transform:translateY(-3px);
+  box-shadow:0 16px 40px rgba(240,244,255,0.2);
+}
+
+/* ====== FOOTER ====== */
+.footer{
+  text-align:center; padding:48px 20px 32px;
+  border-top:1px solid var(--border);
+  position:relative; z-index:1;
+}
+.footer-icons{display:flex; gap:12px; justify-content:center; margin-bottom:16px}
+.footer-icon{
+  width:44px; height:44px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:12px; background:var(--card);
+  border:1px solid var(--border); font-size:18px;
+  transition:all .2s; text-decoration:none;
+}
+.footer-icon:hover{border-color:var(--border-hover); background:var(--card-hover); transform:translateY(-3px)}
+.footer-copy{color:var(--muted); font-size:13px}
+.footer-copy span{color:var(--white); font-weight:600}
+
+/* ====== MODAL ====== */
+.modal{
+  position:fixed; inset:0;
+  display:none; align-items:center; justify-content:center;
+  z-index:1200;
+}
+.modal.active{display:flex}
+.modal-overlay{
+  position:absolute; inset:0;
+  background:rgba(0,0,0,0.75);
+  backdrop-filter:blur(6px);
+}
+.modal-box{
+  position:relative; z-index:1;
+  background:#0d1021;
+  border:1px solid var(--border-hover);
+  padding:36px; border-radius:24px;
+  width:min(440px,92%);
+  animation:modalIn .3s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes modalIn{
+  from{opacity:0; transform:scale(0.92) translateY(16px)}
+  to{opacity:1; transform:scale(1) translateY(0)}
+}
+.modal-close{
+  position:absolute; top:16px; right:16px;
+  width:32px; height:32px; border-radius:8px;
+  background:var(--card); border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; font-size:14px; color:var(--muted);
+  transition:all .2s;
+}
+.modal-close:hover{background:var(--card-hover); color:var(--white)}
+.modal-tag{
+  display:inline-block; padding:4px 12px;
+  background:var(--red-soft); border-radius:999px;
+  color:var(--red); font-size:12px; font-weight:600;
+  letter-spacing:1px; margin-bottom:14px;
+}
+.modal-box h2{
+  font-family:'Syne',sans-serif;
+  font-size:24px; font-weight:800; margin-bottom:6px;
+}
+.modal-box p{color:var(--muted); margin-bottom:24px; font-size:14px}
+.modal-email-btn{
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  width:100%; padding:14px;
+  background:var(--white); color:#060810;
+  border-radius:14px; font-family:'Syne',sans-serif;
+  font-weight:700; font-size:15px;
+  text-decoration:none; transition:all .25s;
+}
+.modal-email-btn:hover{transform:translateY(-2px); box-shadow:0 10px 30px rgba(240,244,255,0.15)}
+
+/* ====== SCROLL ANIMATIONS ====== */
+.reveal{
+  opacity:0; transform:translateY(30px);
+  transition:opacity .7s ease, transform .7s ease;
+}
+.reveal.visible{opacity:1; transform:translateY(0)}
+.reveal-delay-1{transition-delay:.1s}
+.reveal-delay-2{transition-delay:.2s}
+.reveal-delay-3{transition-delay:.3s}
+.reveal-delay-4{transition-delay:.4s}
+
+/* ====== RESPONSIVE ====== */
+@media (max-width:900px){
+  nav{padding:0 20px}
+  .nav-links{display:none}
+  section{padding:80px 20px}
+  .divider{margin:0 20px}
+  .hero{padding:100px 20px 60px}
+  .hero-wrap{grid-template-columns:1fr; gap:40px}
+  .hero h1{font-size:40px; letter-spacing:-1px}
+  .profile{margin:0 auto; width:220px}
+  .profile-ring{width:220px; height:220px}
+  .badge.top{top:-12px; right:-16px; font-size:12px; padding:8px 12px}
+  .badge.bottom{bottom:-12px; left:-16px; font-size:12px; padding:8px 12px}
+  .two-col{grid-template-columns:1fr}
+  .work-grid{grid-template-columns:1fr}
+  .brands-section{padding:32px 20px}
+  h1{font-size:34px}
+}
+@media (max-width:600px){
+  .hero h1{font-size:34px}
+  .hero-actions{flex-direction:column}
+  .btn{width:100%; justify-content:center}
+  .cta{padding:40px 24px}
+  .modal-box{padding:28px 22px}
+}
+</style>
+</head>
+
+<body>
+
+<!-- CURSOR -->
+<canvas id="cursor-trail-canvas"></canvas>
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+
+<!-- AMBIENT BLOBS -->
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="logo"><span class="dot"></span>iShiv</div>
+  <ul class="nav-links">
+    <li><a href="#stats">Stats</a></li>
+    <li><a href="#audience">Audience</a></li>
+    <li><a href="#work">Services</a></li>
+    <li><a href="#cases">Work</a></li>
+  </ul>
+  <button class="nav-btn" onclick="openModal()">Let's Talk</button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-wrap">
+    <div class="reveal">
+      <div class="hero-eyebrow"><span></span> Content Creator & Brand Strategist</div>
+      <h1>
+        I Build Content That Gets<br>
+        <span class="gradient">Attention.</span>
+      </h1>
+      <p class="hero-sub">
+        Helping creators grow through stronger identity, smarter AI tools, and storytelling-driven content.
+      </p>
+      <div class="hero-actions">
+        <a class="btn primary" href="#work">Work With Me →</a>
+        <a class="btn ghost" href="#cases">View Work</a>
+      </div>
+    </div>
+
+    <div class="profile reveal reveal-delay-2">
+      <div class="profile-ring">
+        <div class="profile-inner">
+          <div class="profile-img-placeholder">🎬</div>
+        </div>
+      </div>
+      <div class="badge top">👥 135K+ Followers</div>
+      <div class="badge bottom">🔥 5M+ Views</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- BRANDS -->
+<div class="brands-section">
+  <div class="brands-inner">
+    <p class="brands-label">Brands & Tools Featured</p>
+    <div class="brands">
+      <span class="brand-chip">⚙️ Brushless AI</span>
+      <span class="brand-chip">⚡ RapidDM</span>
+      <span class="brand-chip">✨ Swishy AI</span>
+      <span class="brand-chip">🖥️ Superprofile</span>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- STATS -->
+<section id="stats">
+  <div class="container">
+    <p class="section-tag red reveal">By The Numbers</p>
+    <h1 class="reveal reveal-delay-1">The Impact in Numbers</h1>
+    <div class="grid" style="margin-top:32px">
+      <div class="card stat-card reveal reveal-delay-1">
+        <div class="stat-icon blue-bg">👥</div>
+        <div class="stat-num blue">135K+</div>
+        <p class="muted">Total Followers</p>
+      </div>
+      <div class="card stat-card reveal reveal-delay-2">
+        <div class="stat-icon red-bg">🔥</div>
+        <div class="stat-num red">9.5%</div>
+        <p class="muted">Engagement Rate</p>
+      </div>
+      <div class="card stat-card reveal reveal-delay-3">
+        <div class="stat-icon purple-bg">▶️</div>
+        <div class="stat-num purple">60K–100K</div>
+        <p class="muted">Avg. Reel Views</p>
+      </div>
+      <div class="card stat-card reveal reveal-delay-4">
+        <div class="stat-icon green-bg">📍</div>
+        <div class="stat-num green">India</div>
+        <p class="muted">Core Location</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AUDIENCE -->
+<section id="audience">
+  <div class="container">
+    <p class="section-tag blue reveal">Audience Deep Dive</p>
+    <h1 class="reveal reveal-delay-1">Who Is Watching?</h1>
+
+    <div class="two-col" style="margin-top:32px">
+      <div class="card reveal reveal-delay-1">
+        <h2>📊 Demographics</h2>
+
+        <div class="bar-group" style="margin-top:20px">
+          <div class="bar-label">
+            <span>Men</span>
+            <span style="color:var(--blue); font-weight:600">81%</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill blue" style="width:81%"></div>
+          </div>
+        </div>
+
+        <div class="bar-group">
+          <div class="bar-label">
+            <span>Women</span>
+            <span style="color:var(--purple); font-weight:600">19%</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill purple" style="width:19%"></div>
+          </div>
+        </div>
+
+        <div class="bar-group">
+          <div class="bar-label">
+            <span>Age 18–24</span>
+            <span style="color:var(--red); font-weight:600">54%</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill red" style="width:54%"></div>
+          </div>
+        </div>
+
+        <div class="bar-group">
+          <div class="bar-label">
+            <span>Age 25–34</span>
+            <span style="color:#f472b6; font-weight:600">23%</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill pink" style="width:23%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card reveal reveal-delay-2">
+        <h2>🌍 Top Cities</h2>
+        <p class="muted" style="margin:12px 0 20px; font-size:14px">
+          A highly engaged Indian demographic concentrated in major metropolitan tech and creator hubs.
+        </p>
+        <div class="cities">
+          <span class="chip">🏙️ Delhi</span>
+          <span class="chip">🌆 Mumbai</span>
+          <span class="chip">🏛️ Ahmedabad</span>
+          <span class="chip">🌉 Kolkata</span>
+          <span class="chip">🌇 Pune</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMMUNITY PROFILE -->
+<section>
+  <div class="container center">
+    <p class="section-tag purple reveal">Community</p>
+    <h1 class="reveal reveal-delay-1">The Community Profile</h1>
+    <p class="sub reveal reveal-delay-2">
+      A highly driven audience looking for the best tools, strategies, and inspiration to build their digital presence.
+    </p>
+
+    <div class="grid">
+      <div class="card reveal reveal-delay-1">
+        <div class="stat-icon red-bg" style="margin:0 auto 14px">🎥</div>
+        <h3>Small Creators</h3>
+        <p class="muted" style="margin-top:8px; font-size:14px">Looking for actionable growth strategies and better content workflows.</p>
+      </div>
+      <div class="card reveal reveal-delay-2">
+        <div class="stat-icon blue-bg" style="margin:0 auto 14px">🎓</div>
+        <h3>Students</h3>
+        <p class="muted" style="margin-top:8px; font-size:14px">Learning digital skills, AI tools, and building online identity.</p>
+      </div>
+      <div class="card reveal reveal-delay-3">
+        <div class="stat-icon purple-bg" style="margin:0 auto 14px">🚀</div>
+        <h3>Aspiring Founders</h3>
+        <p class="muted" style="margin-top:8px; font-size:14px">Seeking automation hacks and personal brand-building advice.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTENT PILLARS -->
+<section>
+  <div class="container center">
+    <p class="section-tag reveal">Content Pillars</p>
+    <h1 class="reveal reveal-delay-1">What I Create</h1>
+
+    <div class="grid" style="margin-top:32px">
+      <div class="card reveal reveal-delay-1">
+        <div class="stat-icon red-bg" style="margin:0 auto 14px">📈</div>
+        <h3>Creator Growth</h3>
+        <p class="muted" style="margin-top:8px; font-size:14px">Decode algorithms and grow efficiently.</p>
+      </div>
+      <div class="card reveal reveal-delay-2">
+        <div class="stat-icon blue-bg" style="margin:0 auto 14px">🧠</div>
+        <h3>Creator Tools</h3>
+        <p class="muted" style="margin-top:8px; font-size:14px">High-value AI tools & systems.</p>
+      </div>
+      <div class="card reveal reveal-delay-3">
+        <div class="stat-icon purple-bg" style="margin:0 auto 14px">🧬</div>
+        <h3>Digital Identity</h3>
+        <p class="muted" style="margin-top:8px; font-size:14px">Build strong personal brands.</p>
+      </div>
+      <div class="card reveal reveal-delay-4">
+        <div class="stat-icon" style="background:rgba(251,191,36,0.12); margin:0 auto 14px">🎬</div>
+        <h3>Storytelling</h3>
+        <p class="muted" style="margin-top:8px; font-size:14px">Make messaging engaging & memorable.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CASE STUDIES -->
+<section id="cases">
+  <div class="container center">
+    <p class="section-tag red reveal">Case Studies</p>
+    <h1 class="reveal reveal-delay-1">Campaign Highlights</h1>
+
+    <div class="grid" style="margin-top:32px; text-align:left">
+      <div class="card reveal reveal-delay-1">
+        <div class="case-badge purple">🎬 Swishy AI Showcase</div>
+        <h3 style="margin-bottom:8px">Generating Motion Graphics with AI</h3>
+        <div class="quote-block purple">
+          "Viswash nhi ho rha... bina editing ke motion graphics reel bana skte ho."
+        </div>
+        <div class="case-footer">
+          <div class="case-metric">
+            <p>TOTAL VIEWS</p>
+            <h3 style="color:var(--purple)">100K+</h3>
+          </div>
+          <span class="arrow-link purple">High Conversion ↗</span>
+        </div>
+      </div>
+
+      <div class="card reveal reveal-delay-2">
+        <div class="case-badge blue">💬 RapidDM Feature</div>
+        <h3 style="margin-bottom:8px">Auto DM Automation Setup</h3>
+        <div class="quote-block blue">
+          "Is tool ki wajah se maine 1 mahine me 20k followers gain kiye..."
+        </div>
+        <div class="case-footer">
+          <div class="case-metric">
+            <p>TOTAL VIEWS</p>
+            <h3 style="color:var(--blue)">70K+</h3>
+          </div>
+          <span class="arrow-link blue">High Engagement ↗</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WORK / SERVICES -->
+<section id="work">
+  <div class="container">
+    <div class="work-grid">
+      <div class="reveal">
+        <p class="section-tag blue">Partnerships</p>
+        <h1>Ways to Work<br>Together</h1>
+        <p class="muted" style="margin:16px 0 8px; font-size:15px">
+          I partner with digital-first brands, SaaS tools, and AI utilities to create assets that capture attention and drive conversions.
+        </p>
+
+        <div class="work-list">
+          <div class="work-item">
+            <div class="work-item-icon" style="background:var(--red-soft)">🎥</div>
+            Dedicated Instagram Reels
+          </div>
+          <div class="work-item">
+            <div class="work-item-icon" style="background:var(--blue-soft)">📱</div>
+            Story Promotions & Links
+          </div>
+          <div class="work-item">
+            <div class="work-item-icon" style="background:var(--purple-soft)">📸</div>
+            High-Quality UGC Content
+          </div>
+          <div class="work-item">
+            <div class="work-item-icon" style="background:rgba(251,191,36,0.12)">📦</div>
+            Carousel Tool Showcases
+          </div>
+        </div>
+      </div>
+
+      <div class="card reveal reveal-delay-2">
+        <h2>Why Brands Choose Me</h2>
+        <p class="muted" style="margin-bottom:24px; font-size:14px">What sets my content apart from the crowd.</p>
+
+        <div class="point">
+          <span class="dot-mark red"></span>
+          <div>
+            <h4 class="red">Targeted Audience</h4>
+            <p class="muted" style="font-size:14px">Creators, students & founders actively looking for solutions.</p>
+          </div>
+        </div>
+
+        <div class="point">
+          <span class="dot-mark purple"></span>
+          <div>
+            <h4 class="purple">High Retention</h4>
+            <p class="muted" style="font-size:14px">Strong hooks & documentary style keep viewers engaged.</p>
+          </div>
+        </div>
+
+        <div class="point">
+          <span class="dot-mark blue"></span>
+          <div>
+            <h4 class="blue">Practical Value</h4>
+            <p class="muted" style="font-size:14px">Brand presented naturally as the solution.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section>
+  <div class="container center">
+    <p class="section-tag red reveal">Social Proof</p>
+    <h1 class="reveal reveal-delay-1">Community Love</h1>
+
+    <div class="grid" style="margin-top:32px; text-align:left">
+      <div class="card testimonial reveal reveal-delay-1">
+        <div class="stars">★★★★★</div>
+        <p>"I like how your reels are both smart and easy to understand."</p>
+        <span class="handle">@imazzrael</span>
+      </div>
+      <div class="card testimonial reveal reveal-delay-2">
+        <div class="stars">★★★★★</div>
+        <p>"You always share things that are useful for creators."</p>
+        <span class="handle">@_dheeraj_chauhan</span>
+      </div>
+      <div class="card testimonial reveal reveal-delay-3">
+        <div class="stars">★★★★★</div>
+        <p>"You are my inspiration for creating content."</p>
+        <span class="handle">@astraphilesoul</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section>
+  <div class="container cta-wrap reveal">
+    <div class="cta">
+      <p class="section-tag purple" style="margin-bottom:12px">Get In Touch</p>
+      <h1>Let's Build Something <span class="gradient">Epic.</span></h1>
+      <p class="muted" style="margin-top:12px">Ready to get your tool, product, or brand in front of a highly engaged community?</p>
+      <a href="mailto:contact.shivrajpoot@gmail.com" class="cta-email-btn">
+        ✉️ contact.shivrajpoot@gmail.com
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-icons">
+    <a href="https://instagram.com" class="footer-icon" target="_blank" title="Instagram">📷</a>
+    <a href="mailto:contact.shivrajpoot@gmail.com" class="footer-icon" title="Email">✉️</a>
+  </div>
+  <p class="footer-copy"><span>iShiv</span> · 2026 · Built for creators</p>
+</footer>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <div class="modal-overlay" onclick="closeModal()"></div>
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <span class="modal-tag">LET'S TALK</span>
+    <h2>Contact iShiv</h2>
+    <p>Reach out to discuss brand partnerships, content collaborations, or UGC projects.</p>
+    <a href="mailto:contact.shivrajpoot@gmail.com" class="modal-email-btn">
+      ✉️ contact.shivrajpoot@gmail.com
+    </a>
+  </div>
+</div>
+
+<script>
+/* ===========================
+   MODAL
+=========================== */
+function openModal(){
+  const m = document.getElementById('modal');
+  m.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(){
+  const m = document.getElementById('modal');
+  m.style.display = 'none';
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+
+/* ===========================
+   SMOOTH SCROLL
+=========================== */
+document.querySelectorAll('a[href^="#"]').forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(link.getAttribute('href'));
+    if(target){
+      const top = target.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top, behavior:'smooth' });
+    }
+  });
+});
+
+/* ===========================
+   NAV SCROLL TINT
+=========================== */
+window.addEventListener('scroll', () => {
+  const nav = document.querySelector('nav');
+  nav.style.background = window.scrollY > 50
+    ? 'rgba(6,8,16,0.97)'
+    : 'rgba(6,8,16,0.75)';
+});
+
+/* ===========================
+   SCROLL REVEAL
+=========================== */
+const revealObs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+/* ===========================
+   CUSTOM CURSOR
+=========================== */
+const dot   = document.getElementById('cursor-dot');
+const ring  = document.getElementById('cursor-ring');
+let mx=window.innerWidth/2, my=window.innerHeight/2;
+let rx=mx, ry=my;
+
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  dot.style.left  = mx+'px';
+  dot.style.top   = my+'px';
+});
+
+// Lagged ring follow
+function animateRing(){
+  rx += (mx - rx) * 0.13;
+  ry += (my - ry) * 0.13;
+  ring.style.left = rx+'px';
+  ring.style.top  = ry+'px';
+  requestAnimationFrame(animateRing);
+}
+animateRing();
+
+// Hover effect on interactive elements
+const hoverTargets = 'a, button, .btn, .nav-btn, .card, .work-item, .chip, .brand-chip, .footer-icon, .modal-close, .cta-email-btn, .modal-email-btn';
+document.querySelectorAll(hoverTargets).forEach(el => {
+  el.addEventListener('mouseenter', () => ring.classList.add('hover'));
+  el.addEventListener('mouseleave', () => ring.classList.remove('hover'));
+});
+
+document.addEventListener('mousedown', () => ring.classList.add('click'));
+document.addEventListener('mouseup',   () => ring.classList.remove('click'));
+
+/* ===========================
+   CURSOR TRAIL CANVAS
+=========================== */
+const canvas = document.getElementById('cursor-trail-canvas');
+const ctx    = canvas.getContext('2d');
+canvas.width  = window.innerWidth;
+canvas.height = window.innerHeight;
+window.addEventListener('resize', () => {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+const trail = [];
+const TRAIL_LEN = 22;
+for(let i=0; i<TRAIL_LEN; i++) trail.push({x:mx, y:my, a:0});
+
+let lastX=mx, lastY=my;
+document.addEventListener('mousemove', e => { lastX=e.clientX; lastY=e.clientY; });
+
+function drawTrail(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  trail.unshift({x:lastX, y:lastY});
+  if(trail.length > TRAIL_LEN) trail.pop();
+
+  for(let i=1; i<trail.length; i++){
+    const t = i/trail.length;
+    const alpha = (1-t)*0.35;
+    const radius = (1-t)*4;
+    // colour cycles red→orange→purple
+    const hue = 340 + t*60;
+    ctx.beginPath();
+    ctx.arc(trail[i].x, trail[i].y, radius, 0, Math.PI*2);
+    ctx.fillStyle = `hsla(${hue},100%,65%,${alpha})`;
+    ctx.fill();
+  }
+  requestAnimationFrame(drawTrail);
+}
+drawTrail();
+
+/* ===========================
+   FLOATING PARTICLES
+=========================== */
+const pCanvas = document.createElement('canvas');
+pCanvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:0;';
+document.body.appendChild(pCanvas);
+const pCtx = pCanvas.getContext('2d');
+
+function resizePCanvas(){
+  pCanvas.width  = window.innerWidth;
+  pCanvas.height = window.innerHeight;
+}
+resizePCanvas();
+window.addEventListener('resize', resizePCanvas);
+
+const COLORS = ['rgba(255,77,109,', 'rgba(167,139,250,', 'rgba(56,189,248,', 'rgba(251,191,36,'];
+const particles = Array.from({length:55}, () => ({
+  x: Math.random()*window.innerWidth,
+  y: Math.random()*window.innerHeight,
+  r: Math.random()*1.8+0.4,
+  dx: (Math.random()-0.5)*0.35,
+  dy: (Math.random()-0.5)*0.35,
+  color: COLORS[Math.floor(Math.random()*COLORS.length)],
+  alpha: Math.random()*0.4+0.1,
+  pulse: Math.random()*Math.PI*2,
+}));
+
+function animateParticles(){
+  pCtx.clearRect(0,0,pCanvas.width,pCanvas.height);
+  particles.forEach(p => {
+    p.x += p.dx; p.y += p.dy; p.pulse += 0.02;
+    if(p.x<0) p.x=pCanvas.width;
+    if(p.x>pCanvas.width) p.x=0;
+    if(p.y<0) p.y=pCanvas.height;
+    if(p.y>pCanvas.height) p.y=0;
+    const a = p.alpha + Math.sin(p.pulse)*0.12;
+    pCtx.beginPath();
+    pCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    pCtx.fillStyle = p.color + Math.max(0,a).toFixed(2)+')';
+    pCtx.fill();
+  });
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+/* ===========================
+   TWINKLING STAR GRID
+=========================== */
+const sgCanvas = document.createElement('canvas');
+sgCanvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0.5;';
+document.body.appendChild(sgCanvas);
+const sgCtx = sgCanvas.getContext('2d');
+
+function resizeSG(){
+  sgCanvas.width=window.innerWidth; sgCanvas.height=window.innerHeight;
+}
+resizeSG();
+window.addEventListener('resize',resizeSG);
+
+const stars = Array.from({length:80}, ()=>({
+  x:Math.random()*window.innerWidth,
+  y:Math.random()*window.innerHeight,
+  r:Math.random()*0.9+0.2,
+  phase:Math.random()*Math.PI*2,
+  speed:Math.random()*0.008+0.003,
+}));
+
+function animateStars(){
+  sgCtx.clearRect(0,0,sgCanvas.width,sgCanvas.height);
+  stars.forEach(s => {
+    s.phase += s.speed;
+    const a = (Math.sin(s.phase)+1)/2 * 0.6 + 0.05;
+    sgCtx.beginPath();
+    sgCtx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    sgCtx.fillStyle = `rgba(255,255,255,${a.toFixed(2)})`;
+    sgCtx.fill();
+  });
+  requestAnimationFrame(animateStars);
+}
+animateStars();
+
+/* ===========================
+   CARD MAGNETIC TILT
+=========================== */
+document.querySelectorAll('.card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width  - 0.5;
+    const y = (e.clientY - r.top)  / r.height - 0.5;
+    card.style.transform = `translateY(-6px) rotateX(${(-y*8).toFixed(1)}deg) rotateY(${(x*8).toFixed(1)}deg)`;
+    card.style.transition = 'transform .05s ease';
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = '';
+    card.style.transition = 'all .3s ease';
+  });
+});
+
+/* ===========================
+   NAV LINK MAGNETIC PULL
+=========================== */
+document.querySelectorAll('.nav-links a').forEach(link => {
+  link.addEventListener('mousemove', e => {
+    const r  = link.getBoundingClientRect();
+    const cx = r.left + r.width/2;
+    const cy = r.top  + r.height/2;
+    const dx = (e.clientX - cx) * 0.25;
+    const dy = (e.clientY - cy) * 0.25;
+    link.style.transform = `translate(${dx}px,${dy}px)`;
+    link.style.transition = 'transform .05s ease';
+  });
+  link.addEventListener('mouseleave', () => {
+    link.style.transform = '';
+    link.style.transition = 'transform .4s ease';
+  });
+});
+
+/* ===========================
+   NAV BTN & WORK-ITEM MAGNETIC
+=========================== */
+['.nav-btn','.btn.primary'].forEach(sel => {
+  document.querySelectorAll(sel).forEach(btn => {
+    btn.addEventListener('mousemove', e => {
+      const r  = btn.getBoundingClientRect();
+      const dx = (e.clientX - (r.left+r.width/2)) * 0.3;
+      const dy = (e.clientY - (r.top+r.height/2)) * 0.3;
+      btn.style.transform = `translate(${dx}px,${dy}px) scale(1.05)`;
+      btn.style.transition = 'transform .05s ease';
+    });
+    btn.addEventListener('mouseleave', () => {
+      btn.style.transform = '';
+      btn.style.transition = 'transform .4s ease, box-shadow .25s ease';
+    });
+  });
+});
+
+/* ===========================
+   COUNTER ANIMATION
+=========================== */
+function animateCounter(el, target, suffix=''){
+  const dur = 1800;
+  const start = performance.now();
+  const isFloat = target%1!==0;
+  function frame(now){
+    const t = Math.min((now-start)/dur, 1);
+    const ease = 1-Math.pow(1-t,3);
+    const val = isFloat ? (target*ease).toFixed(1) : Math.floor(target*ease);
+    el.textContent = val + suffix;
+    if(t<1) requestAnimationFrame(frame);
+    else el.textContent = target + suffix;
+  }
+  requestAnimationFrame(frame);
+}
+
+const statsObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(!e.isIntersecting) return;
+    const el = e.target;
+    const txt = el.textContent.trim();
+    if(txt==='135K+')      animateCounter(el, 135, 'K+');
+    else if(txt==='9.5%')  animateCounter(el, 9.5, '%');
+    else if(txt==='100K+') animateCounter(el, 100, 'K+');
+    else if(txt==='70K+')  animateCounter(el, 70,  'K+');
+    statsObs.unobserve(el);
+  });
+}, {threshold:0.5});
+document.querySelectorAll('.stat-num').forEach(el => statsObs.observe(el));
+
+/* ===========================
+   CLICK RIPPLE ON BUTTONS
+=========================== */
+document.querySelectorAll('.btn, .nav-btn, .cta-email-btn, .modal-email-btn').forEach(btn => {
+  btn.style.position='relative'; btn.style.overflow='hidden';
+  btn.addEventListener('click', e => {
+    const r = btn.getBoundingClientRect();
+    const rip = document.createElement('span');
+    const size = Math.max(r.width,r.height)*2;
+    rip.style.cssText = `
+      position:absolute; border-radius:50%;
+      width:${size}px; height:${size}px;
+      left:${e.clientX-r.left-size/2}px;
+      top:${e.clientY-r.top-size/2}px;
+      background:rgba(255,255,255,0.25);
+      transform:scale(0); pointer-events:none;
+      animation:ripple .55s ease-out forwards;
+    `;
+    btn.appendChild(rip);
+    setTimeout(()=>rip.remove(), 600);
+  });
+});
+
+const rippleStyle = document.createElement('style');
+rippleStyle.textContent=`@keyframes ripple{to{transform:scale(1);opacity:0}}`;
+document.head.appendChild(rippleStyle);
+
+/* ===========================
+   HIDE CURSOR WHEN IDLE
+=========================== */
+let idleTimer;
+document.addEventListener('mousemove',()=>{
+  dot.style.opacity='1'; ring.style.opacity='1';
+  clearTimeout(idleTimer);
+  idleTimer=setTimeout(()=>{
+    dot.style.opacity='0'; ring.style.opacity='0';
+  }, 3000);
+});
+</script>
+
+</body>
+</html>
